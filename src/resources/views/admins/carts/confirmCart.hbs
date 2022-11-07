@@ -1,0 +1,96 @@
+<div class="container mt-4">
+    <h1>Danh sách phiếu thuê đã xác nhận</h1>
+    <table class="table">
+        <thead>
+            <th>#</th>
+            <th>phone</th>
+            <th>Ngày tạo</th>
+            <th></th>
+            <th></th>
+        </thead>
+        <tbody>
+            {{#each cart}}
+                <tr class="row-data">
+                    <td>{{sum @index 1}}</td>
+                    <td>{{this.phone}}</td>
+                    <td class="dateCreateAt">{{dateFormat this.createAt format="MM/DD/YYYY"}}</td>
+                    <td class="dateCreateAtData"hidden>{{ this.createAt }}</td>
+                    <td>{{this.status}}</td>
+                    <td>
+                        <a href="/admin/rentals/list/{{this._id}}/detail" class="btn btn-info btn-detail">Xem chi tiết</a>
+                        <button class="btn btn-success btn-confirm" data-id="{{this._id}}">Đã nhận</button>
+                        <button class="btn btn-danger btn-reject" data-id="{{this._id}}">Hủy</button>
+                    </td>
+                </tr>
+            {{/each}}       
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded",function(){
+        var btnConfirm = document.querySelectorAll('.btn-confirm')
+        var reject = document.querySelectorAll('.btn-reject')
+        var dateCreateAtData = document.querySelectorAll('.dateCreateAtData')
+        //Tựu dộng xóa 
+        dateCreateAtData.forEach((date) => {
+            var row = this.querySelector('.table').querySelector('.row-data')
+            var dateConfirm = new Date(date.innerText)
+            var today = new Date().getTime();//Lấy ngày hiện tại
+            var d = Math.floor((today - dateConfirm.getTime())/1000);
+            console.log('ngày chênh lệch',d/(60*60*24))
+            if(d/(60*60*24) > 1){
+                var idItem = row.querySelector('.btn-reject').getAttribute("data-id")
+                row.remove()
+                var reason = 'Khách không đến lấy truyện'
+                axios.post('/admin/rentals/' + idItem +'/reject',{
+                    reasonReject: reason
+                })
+                .then((res)=>{      
+                    console.log(res.data.resonReject)
+                    var data = res.data
+                })
+                .catch((err)=>{
+                    console.log(err)
+                })
+            }
+        })
+
+        btnConfirm.forEach((btn) => {
+            btn.onclick = function(){
+                var idItem = this.getAttribute("data-id")
+                this.parentElement.parentElement.remove()
+                axios.post('/admin/rentals/confirm/' + idItem)
+                    .then((res)=>{
+                        console.log(res)
+                    })
+                    .catch((err)=>{
+                        console.log(err)
+                    })
+            }
+        })
+
+
+        reject.forEach((rej, i, rejArr) =>{
+            rej.onclick = function (){
+                var idItem = this.getAttribute("data-id")
+                var value = document.getElementById(idItem)
+                var reason = prompt("Nhập lý do hủy yêu cầu!")
+                var reasonReject = this.parentElement.parentElement.querySelectorAll('.reason-reject')
+                this.parentElement.parentElement.remove()
+                if (reason != null) {
+                    axios.post('/admin/rentals/' + idItem +'/reject',{
+                        reasonReject: reason
+                    })
+                    .then((res)=>{      
+                        console.log(res.data.resonReject)
+                        var data = res.data
+                    })
+                    .catch((err)=>{
+                        console.log(err)
+                    })
+                }
+            }    
+        })
+    })
+</script>
